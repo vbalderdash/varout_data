@@ -14,7 +14,8 @@ class outfile:
         self.lon = -self.header.iloc[1][0]
         self.lat,self.alt = self.header.iloc[1][1:]
         self.dx,self.dy,self.dz    = self.header.iloc[2]*1000
-        self.ix,self.iy,self.iz    = self.header.iloc[3]*1000
+        self.ix,self.iy,initz    = self.header.iloc[3]*1000
+        self.iz = initz+self.alt*1000
     
     def read_header(self):
         return pd.read_csv(self.file, delim_whitespace=True,header=None,nrows =4)
@@ -24,16 +25,18 @@ class outfile:
             rowc = self.nx*self.ny*self.nz//9 + 1
         if self.nx*self.ny*self.nz%9==0:
             rowc = self.nx*self.ny*self.nz//9
-        
+
         refl = pd.read_csv(self.file,delim_whitespace=True,header=None,skiprows=5,       nrows=rowc)
         u    = pd.read_csv(self.file,delim_whitespace=True,header=None,skiprows=rowc+6,  nrows=rowc)
         v    = pd.read_csv(self.file,delim_whitespace=True,header=None,skiprows=rowc*2+7,nrows=rowc)
         w    = pd.read_csv(self.file,delim_whitespace=True,header=None,skiprows=rowc*3+8,nrows=rowc)
 
-        refl = np.array(refl).flatten()[:-1].reshape(self.nz,self.ny,self.nx)
-        u    = np.array(u).flatten()[:-1].reshape(self.nz,self.ny,self.nx)
-        v    = np.array(v).flatten()[:-1].reshape(self.nz,self.ny,self.nx)
-        w    = np.array(w).flatten()[:-1].reshape(self.nz,self.ny,self.nx)
+        leftovers = np.size(refl) - self.nx*self.ny*self.nz
+
+        refl = np.array(refl).flatten()[:-leftovers].reshape(self.nz,self.ny,self.nx)
+        u    = np.array(u).flatten()[:-leftovers].reshape(self.nz,self.ny,self.nx)
+        v    = np.array(v).flatten()[:-leftovers].reshape(self.nz,self.ny,self.nx)
+        w    = np.array(w).flatten()[:-leftovers].reshape(self.nz,self.ny,self.nx)
         return refl,u,v,w
     
     def data_grid(self):
